@@ -12,6 +12,7 @@ The current MVP is a local React/Vite game. It does not connect to brokerages, p
 - Score, cash, saved amount, streak, misses, and round counters.
 - Phantom ledger: records saved, lost, and frozen decisions during the run.
 - Keyboard controls: `A` / `Space` to snap out, `L` / `Y` to take the trade, `R` to restart.
+- Simplified Chinese player-facing UI, card copy, feedback, and HTML metadata.
 - SnapOut-branded HTML metadata and favicon.
 
 See [docs/PRODUCT_MAP.md](docs/PRODUCT_MAP.md) for the full product map and [docs/MEMORY_SYSTEM.md](docs/MEMORY_SYSTEM.md) for the project memory workflow.

@@ -69,6 +69,7 @@ Game state is plain React state backed by deterministic helpers.
 - Mount point: `src/main.jsx`
 - Styling: Tailwind classes plus `src/index.css`
 - HTML shell: `index.html`
+- Player-facing app copy, card prompts, feedback, and HTML metadata are currently localized to Simplified Chinese.
 
 ## Debug Fixes In This Version
 
