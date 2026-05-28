@@ -1,3 +1,73 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  html {
+    background: #090907;
+  }
+
+  body {
+    min-width: 320px;
+    margin: 0;
+    background: #090907;
+    font-family: Bahnschrift, "Aptos", "Segoe UI", sans-serif;
+  }
+
+  button {
+    font: inherit;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: Impact, Haettenschweiler, "Arial Black", Bahnschrift, sans-serif;
+    letter-spacing: 0;
+  }
+
+  .market-grid {
+    background-color: #090907;
+    background-image:
+      linear-gradient(rgba(250, 250, 250, 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(250, 250, 250, 0.035) 1px, transparent 1px),
+      radial-gradient(circle at 20% 0%, rgba(239, 68, 68, 0.16), transparent 34%),
+      linear-gradient(135deg, rgba(14, 165, 233, 0.12), transparent 38%);
+    background-size: 44px 44px, 44px 44px, 100% 100%, 100% 100%;
+  }
+
+  .ticker-tape {
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .ticker-tape__inner {
+    display: inline-flex;
+    min-width: max-content;
+    gap: 2rem;
+    padding-left: 100%;
+    animation: ticker-move 20s linear infinite;
+  }
+
+  .chart-bar {
+    min-width: 4px;
+    box-shadow: 0 0 18px currentColor;
+    opacity: 0.78;
+  }
+
+  .scan-lines {
+    pointer-events: none;
+    background-image: linear-gradient(rgba(255, 255, 255, 0.04) 50%, transparent 50%);
+    background-size: 100% 8px;
+    mix-blend-mode: screen;
+  }
+}
+
+@keyframes ticker-move {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-100%);
+  }
+}

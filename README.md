@@ -1,16 +1,68 @@
-# React + Vite
+# SnapOut MVP
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+SnapOut is now an HTML browser game about resisting impulsive retail trades. The player faces timed FOMO cards, chooses whether to snap out or chase the trade, and tries to finish the run with cash intact and heat under control.
 
-Currently, two official plugins are available:
+The current MVP is a local React/Vite game. It does not connect to brokerages, persist history, pull market data, or process payments.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Current Product
 
-## React Compiler
+- Eight-card arcade run themed around high-volatility trade impulses.
+- Timed decisions: `Snap Out` banks the avoided loss; `Take Trade` burns cash.
+- Heat meter: missed timers and chased trades push the run toward shutdown.
+- Score, cash, saved amount, streak, misses, and round counters.
+- Phantom ledger: records saved, lost, and frozen decisions during the run.
+- Keyboard controls: `A` / `Space` to snap out, `L` / `Y` to take the trade, `R` to restart.
+- SnapOut-branded HTML metadata and favicon.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+See [docs/PRODUCT_MAP.md](docs/PRODUCT_MAP.md) for the full product map and [docs/MEMORY_SYSTEM.md](docs/MEMORY_SYSTEM.md) for the project memory workflow.
 
-## Expanding the ESLint configuration
+## Tech Stack
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- React 19
+- Vite 7
+- Tailwind CSS 3
+- Lucide React icons
+- Node built-in test runner
+- ESLint 9
+
+## Development
+
+```bash
+npm install
+npm run dev
+```
+
+Useful checks:
+
+```bash
+npm test
+npm run lint
+npm run build
+```
+
+## Project Shape
+
+```text
+src/
+  App.jsx              # Mounts the SnapOut experience
+  SnapOutApp.jsx       # Main game UI and interactions
+  gameLogic.js         # Deterministic game rules
+  gameLogic.test.js    # Node tests for game rules
+  index.css            # Tailwind entrypoint and game styling
+docs/
+  PRODUCT_MAP.md
+  MEMORY_SYSTEM.md
+.gemini/
+  GEMINI.md            # Local project identity for agent context
+  MEMORY.md            # Local current-state summary
+  RULES.md             # Local memory operating rules
+  sessions/            # Local dated session logs
+```
+
+## Known Gaps
+
+- No persistent ledger or saved high scores.
+- No real risk model or market data.
+- No account system or brokerage integration.
+- No deployment target configured.
+- Game tuning, difficulty modes, and sound are still open.
