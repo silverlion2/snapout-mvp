@@ -1,20 +1,24 @@
-import { createElement, useCallback, useEffect, useMemo, useState } from 'react';
+import { createElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Activity,
+  AlertTriangle,
   ArrowDownRight,
   ArrowUpRight,
   BadgeAlert,
   CircleDollarSign,
+  Database,
   Flame,
   Gauge,
   Keyboard,
   Play,
   RadioTower,
   ReceiptText,
+  RefreshCw,
   ScanLine,
   ShieldCheck,
   Target,
   TimerReset,
+  Trash2,
   TrendingUp,
   Trophy,
   Wallet,
@@ -31,8 +35,35 @@ import {
   getGameStatus,
   resolveDecision,
 } from './gameLogic';
+import {
+  appendPersistentEntry,
+  clearPersistentLedger,
+  createEmptyPersistentLedger,
+  loadPersistentLedger,
+  mergePersistentLedgers,
+  savePersistentLedger,
+  summarizePersistentLedger,
+} from './ledgerStorage';
 
 const ROUND_SECONDS = 8;
+
+function getBrowserStorage() {
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+function createInitialLedgerState() {
+  const loaded = loadPersistentLedger(getBrowserStorage());
+
+  return {
+    ...loaded,
+    settledStatus: loaded.status,
+    status: 'loading',
+  };
+}
 
 const STATUS_COPY = {
   won: {
@@ -130,6 +161,10 @@ export default function SnapOutApp() {
   const [phase, setPhase] = useState('ready');
   const [countdown, setCountdown] = useState(ROUND_SECONDS);
   const [feedback, setFeedback] = useState(null);
+  const [ledgerState, setLedgerState] = useState(createInitialLedgerState);
+  const [isClearingLedger, setIsClearingLedger] = useState(false);
+  const clearLedgerButtonRef = useRef(null);
+  const confirmClearButtonRef = useRef(null);
 
   const gameStatus = getGameStatus(gameState);
   const isFinished = phase === 'finished' || gameStatus !== 'playing';
@@ -144,6 +179,24 @@ export default function SnapOutApp() {
   const statusMessage = STATUS_COPY[isFinished ? gameStatus : 'playing'];
   const pressure = getPressureCopy(heatPercent);
   const StatusIcon = statusMessage.icon;
+
+  useEffect(() => {
+    const settleTimer = window.setTimeout(() => {
+      setLedgerState((current) => (
+        current.status === 'loading'
+          ? { ...current, status: current.settledStatus }
+          : current
+      ));
+    }, 0);
+
+    return () => window.clearTimeout(settleTimer);
+  }, []);
+
+  useEffect(() => {
+    if (isClearingLedger) {
+      confirmClearButtonRef.current?.focus();
+    }
+  }, [isClearingLedger]);
 
   const startGame = useCallback(() => {
     setGameState(createInitialGameState());
@@ -162,8 +215,17 @@ export default function SnapOutApp() {
       const amount = calculatePotentialLoss(card);
       const nextState = resolveDecision(gameState, card, decision);
       const nextStatus = getGameStatus(nextState);
+      const nextLedger = appendPersistentEntry(ledgerState.ledger, nextState.ledger[0]);
+      const saveResult = savePersistentLedger(getBrowserStorage(), nextLedger);
 
       setGameState(nextState);
+      setLedgerState((current) => ({
+        ...current,
+        ledger: nextLedger,
+        status: saveResult.ok ? 'ready' : 'unavailable',
+        settledStatus: saveResult.ok ? 'ready' : 'unavailable',
+        droppedCount: 0,
+      }));
       setCountdown(ROUND_SECONDS);
       setFeedback({
         ...FEEDBACK_COPY[decision],
@@ -172,8 +234,50 @@ export default function SnapOutApp() {
       });
       setPhase(nextStatus === 'playing' ? 'playing' : 'finished');
     },
-    [gameState, phase],
+    [gameState, ledgerState.ledger, phase],
   );
+
+  const retryLedgerStorage = useCallback(() => {
+    const loaded = loadPersistentLedger(getBrowserStorage());
+
+    if (loaded.status === 'unavailable') {
+      setLedgerState((current) => ({ ...current, status: 'unavailable', settledStatus: 'unavailable' }));
+      return;
+    }
+
+    const mergedLedger = mergePersistentLedgers(loaded.ledger, ledgerState.ledger);
+    const saveResult = savePersistentLedger(getBrowserStorage(), mergedLedger);
+    const nextStatus = saveResult.ok ? (loaded.status === 'partial' ? 'partial' : 'ready') : 'unavailable';
+
+    setLedgerState({
+      ledger: mergedLedger,
+      status: nextStatus,
+      settledStatus: nextStatus,
+      droppedCount: loaded.droppedCount,
+    });
+  }, [ledgerState.ledger]);
+
+  const cancelClearLedger = useCallback(() => {
+    setIsClearingLedger(false);
+    window.requestAnimationFrame(() => clearLedgerButtonRef.current?.focus());
+  }, []);
+
+  const confirmClearLedger = useCallback(() => {
+    const result = clearPersistentLedger(getBrowserStorage());
+
+    if (result.ok) {
+      setLedgerState({
+        ledger: createEmptyPersistentLedger(),
+        status: 'cleared',
+        settledStatus: 'cleared',
+        droppedCount: 0,
+      });
+    } else {
+      setLedgerState((current) => ({ ...current, status: 'unavailable', settledStatus: 'unavailable' }));
+    }
+
+    setIsClearingLedger(false);
+  }, []);
 
   useEffect(() => {
     if (phase !== 'playing' || gameStatus !== 'playing') {
@@ -198,6 +302,19 @@ export default function SnapOutApp() {
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (event.repeat) {
+        return;
+      }
+
+      if (isClearingLedger && event.code === 'Escape') {
+        event.preventDefault();
+        cancelClearLedger();
+        return;
+      }
+
+      const isInteractiveTarget = event.target instanceof HTMLElement
+        && event.target.closest('button, a, input, select, textarea, [role="button"]');
+
+      if (isInteractiveTarget) {
         return;
       }
 
@@ -228,7 +345,7 @@ export default function SnapOutApp() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleDecision, phase, startGame]);
+  }, [cancelClearLedger, handleDecision, isClearingLedger, phase, startGame]);
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#070807] text-stone-100">
@@ -427,21 +544,18 @@ export default function SnapOutApp() {
                     </div>
                   )}
 
-                  <div className="min-h-[210px] rounded-md border border-stone-700 bg-stone-950/75 p-4">
-                    <div className="mb-3 flex items-center gap-2 text-amber-100">
-                      <ReceiptText size={18} />
-                      <span className="text-sm font-black uppercase">幻影账本</span>
-                    </div>
-                    {gameState.ledger.length === 0 ? (
-                      <p className="text-sm leading-6 text-stone-500">暂无记录。开始一局并做出选择。</p>
-                    ) : (
-                      <div className="space-y-2">
-                        {gameState.ledger.map((entry) => (
-                          <LedgerEntry key={entry.id} entry={entry} />
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  <PersistentLedgerPanel
+                    clearButtonRef={clearLedgerButtonRef}
+                    confirmButtonRef={confirmClearButtonRef}
+                    droppedCount={ledgerState.droppedCount}
+                    isClearing={isClearingLedger}
+                    ledger={ledgerState.ledger}
+                    status={ledgerState.status}
+                    onCancelClear={cancelClearLedger}
+                    onConfirmClear={confirmClearLedger}
+                    onRequestClear={() => setIsClearingLedger(true)}
+                    onRetry={retryLedgerStorage}
+                  />
                 </aside>
               </div>
 
@@ -549,7 +663,7 @@ function Meter({ label, value, percent, tone }) {
 function DecisionButton({ disabled, icon, label, meta, onClick, tone }) {
   return (
     <button
-      className={`decision-button flex min-h-24 w-full flex-col items-start justify-center gap-3 rounded-md border px-4 py-3 text-left font-black uppercase transition disabled:cursor-not-allowed disabled:border-stone-700 disabled:bg-stone-900 disabled:text-stone-600 lg:min-h-28 ${tone}`}
+      className={`decision-button flex min-h-24 w-full flex-col items-start justify-center gap-3 rounded-md border px-4 py-3 text-left font-black uppercase outline-none transition focus-visible:ring-2 focus-visible:ring-amber-100 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950 disabled:cursor-not-allowed disabled:border-stone-700 disabled:bg-stone-900 disabled:text-stone-600 lg:min-h-28 ${tone}`}
       disabled={disabled}
       type="button"
       onClick={onClick}
@@ -572,6 +686,163 @@ function SmallStat({ label, value }) {
   );
 }
 
+function getLedgerStatusCopy(status, droppedCount) {
+  if (status === 'loading') {
+    return {
+      icon: Database,
+      title: '正在读取本机记录',
+      body: '游戏可以立即开始。',
+      tone: 'border-sky-300/40 bg-sky-950/30 text-sky-100',
+    };
+  }
+
+  if (status === 'unavailable') {
+    return {
+      icon: AlertTriangle,
+      title: '本机存储暂不可用',
+      body: '本局仍可继续，但刷新后这些记录可能消失。',
+      tone: 'border-red-300/50 bg-red-950/35 text-red-100',
+    };
+  }
+
+  if (status === 'partial') {
+    return {
+      icon: AlertTriangle,
+      title: '已恢复可用记录',
+      body: `有 ${droppedCount} 条损坏或过期记录未载入。`,
+      tone: 'border-amber-200/50 bg-amber-950/30 text-amber-50',
+    };
+  }
+
+  if (status === 'cleared') {
+    return {
+      icon: ShieldCheck,
+      title: '本机记录已清空',
+      body: '只移除了 SnapOut 的幻影账本。',
+      tone: 'border-emerald-300/40 bg-emerald-950/30 text-emerald-100',
+    };
+  }
+
+  return {
+    icon: Database,
+    title: status === 'empty' ? '仅保存在这台设备' : '本机记录已保存',
+    body: status === 'empty' ? '做出选择后会自动写入，最多保留 40 条。' : '无账号、无云同步、无遥测。',
+    tone: 'border-stone-700 bg-stone-900/70 text-stone-300',
+  };
+}
+
+function PersistentLedgerPanel({
+  clearButtonRef,
+  confirmButtonRef,
+  droppedCount,
+  isClearing,
+  ledger,
+  status,
+  onCancelClear,
+  onConfirmClear,
+  onRequestClear,
+  onRetry,
+}) {
+  const summary = summarizePersistentLedger(ledger);
+  const statusCopy = getLedgerStatusCopy(status, droppedCount);
+  const StatusIcon = statusCopy.icon;
+  const hasEntries = ledger.entries.length > 0;
+
+  return (
+    <section className="min-h-[240px] rounded-md border border-stone-700 bg-stone-950/75 p-4" aria-labelledby="persistent-ledger-title">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2 text-amber-100">
+          <ReceiptText size={18} />
+          <h2 id="persistent-ledger-title" className="text-sm font-black uppercase">本机幻影账本</h2>
+        </div>
+        <span className="rounded-sm border border-stone-700 px-2 py-1 text-[10px] font-black uppercase text-stone-400">
+          最近 {ledger.entries.length}/40
+        </span>
+      </div>
+
+      <div
+        className={`mb-3 flex items-start gap-2 rounded-md border p-3 text-xs leading-5 ${statusCopy.tone}`}
+        aria-live="polite"
+        role={status === 'unavailable' ? 'alert' : 'status'}
+      >
+        <StatusIcon size={16} className="mt-0.5 shrink-0" />
+        <div>
+          <p className="font-black">{statusCopy.title}</p>
+          <p className="opacity-80">{statusCopy.body}</p>
+        </div>
+      </div>
+
+      <div className="mb-3 grid grid-cols-3 gap-2">
+        <SmallStat label="决策" value={summary.decisions} />
+        <SmallStat label="离场" value={summary.savedDecisions} />
+        <SmallStat label="累计避损" value={formatMoney(summary.savedAmount)} />
+      </div>
+      <p className="mb-3 text-[11px] leading-5 text-stone-500">金额是游戏内风险估算，不代表实际收益或效果保证。</p>
+
+      {!hasEntries ? (
+        <div className="rounded-md border border-dashed border-stone-700 px-3 py-4 text-sm leading-6 text-stone-500">
+          暂无本机记录。开始一局并做出选择后，这里会形成可清除的历史。
+        </div>
+      ) : (
+        <div className="space-y-2" aria-label="最近的幻影账本记录">
+          {ledger.entries.slice(0, 6).map((entry) => (
+            <LedgerEntry key={entry.id} entry={entry} />
+          ))}
+        </div>
+      )}
+
+      <div className="mt-4 border-t border-stone-800 pt-3">
+        {isClearing ? (
+          <div className="rounded-md border border-red-300/50 bg-red-950/30 p-3" role="group" aria-label="确认清空本机账本">
+            <p className="text-sm font-black text-red-100">确认清空这台设备上的 SnapOut 记录？</p>
+            <p className="mt-1 text-xs leading-5 text-stone-400">此操作无法撤销，不会影响浏览器中的其他网站数据。</p>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <button
+                ref={confirmButtonRef}
+                className="min-h-11 rounded-md border border-red-300 bg-red-400 px-3 py-2 text-sm font-black text-stone-950 outline-none focus-visible:ring-2 focus-visible:ring-red-100 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950"
+                type="button"
+                onClick={onConfirmClear}
+              >
+                确认清空
+              </button>
+              <button
+                className="min-h-11 rounded-md border border-stone-600 px-3 py-2 text-sm font-black text-stone-200 outline-none focus-visible:ring-2 focus-visible:ring-amber-100 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950"
+                type="button"
+                onClick={onCancelClear}
+              >
+                取消
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2 sm:flex-row">
+            {status === 'unavailable' && (
+              <button
+                className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-md border border-amber-200/70 px-3 py-2 text-sm font-black text-amber-100 outline-none focus-visible:ring-2 focus-visible:ring-amber-100 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950"
+                type="button"
+                onClick={onRetry}
+              >
+                <RefreshCw size={16} />
+                重试保存
+              </button>
+            )}
+            <button
+              ref={clearButtonRef}
+              className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-md border border-stone-700 px-3 py-2 text-sm font-black text-stone-400 outline-none transition hover:border-red-300/70 hover:text-red-100 focus-visible:ring-2 focus-visible:ring-red-100 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={!hasEntries}
+              type="button"
+              onClick={onRequestClear}
+            >
+              <Trash2 size={16} />
+              清空本机记录
+            </button>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
 function LedgerEntry({ entry }) {
   const isSaved = entry.result === 'saved';
   const isFrozen = entry.result === 'froze';
@@ -582,6 +853,9 @@ function LedgerEntry({ entry }) {
       <div className="min-w-0">
         <p className="truncate text-sm font-black text-stone-100">{entry.ticker}</p>
         <p className="truncate text-xs text-stone-500">{entry.label}</p>
+        <time className="text-[10px] text-stone-600" dateTime={entry.createdAt}>
+          {new Intl.DateTimeFormat('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(entry.createdAt))}
+        </time>
       </div>
       <span className={`shrink-0 text-sm font-black ${tone}`}>
         {isSaved ? '+' : '-'}
@@ -616,13 +890,14 @@ function ProtocolItem({ icon, title, body }) {
 
 function GameOverlay({ icon, title, body, actionLabel, onAction }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-stone-950/90 px-4 py-6 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-stone-950/90 px-4 py-6 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={title}>
       <div className="overlay-panel max-w-xl rounded-md border border-amber-100/80 bg-[#11120f] p-6 text-center shadow-[0_24px_80px_rgba(0,0,0,0.65)]">
         {createElement(icon, { size: 46, className: 'mx-auto mb-3 text-amber-100' })}
         <h2 className="font-display text-4xl font-black leading-tight text-stone-50">{title}</h2>
         <p className="mx-auto mt-3 max-w-md text-base leading-7 text-stone-300">{body}</p>
         <button
-          className="mt-6 inline-flex items-center gap-2 rounded-md border border-emerald-300 bg-emerald-300 px-6 py-3 font-display text-xl font-black uppercase text-stone-950 transition hover:bg-emerald-200"
+          autoFocus
+          className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-md border border-emerald-300 bg-emerald-300 px-6 py-3 font-display text-xl font-black uppercase text-stone-950 outline-none transition hover:bg-emerald-200 focus-visible:ring-2 focus-visible:ring-amber-100 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950"
           type="button"
           onClick={onAction}
         >

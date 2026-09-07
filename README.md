@@ -2,7 +2,7 @@
 
 SnapOut is now an HTML browser game about resisting impulsive retail trades. The player faces timed FOMO cards, chooses whether to snap out or chase the trade, and tries to finish the run with cash intact and heat under control.
 
-The current MVP is a local React/Vite game. It does not connect to brokerages, persist history, pull market data, or process payments.
+The current MVP is a local React/Vite game. It keeps a bounded phantom ledger in the player's browser, but does not connect to brokerages, sync accounts, pull market data, or process payments.
 
 ## Current Product
 
@@ -10,7 +10,8 @@ The current MVP is a local React/Vite game. It does not connect to brokerages, p
 - Timed decisions: `Snap Out` banks the avoided loss; `Take Trade` burns cash.
 - Heat meter: missed timers and chased trades push the run toward shutdown.
 - Score, cash, saved amount, streak, misses, and round counters.
-- Phantom ledger: records saved, lost, and frozen decisions during the run.
+- Local phantom ledger: immediately records saved, lost, and frozen decisions, keeps the latest 40 across refreshes, and can be cleared by the player.
+- Storage recovery: invalid records are ignored safely, and blocked browser storage falls back to a visible temporary mode without stopping play.
 - Keyboard controls: `A` / `Space` to snap out, `L` / `Y` to take the trade, `R` to restart.
 - Simplified Chinese player-facing UI, card copy, feedback, and HTML metadata.
 - SnapOut-branded HTML metadata and favicon.
@@ -49,6 +50,8 @@ src/
   SnapOutApp.jsx       # Main game UI and interactions
   gameLogic.js         # Deterministic game rules
   gameLogic.test.js    # Node tests for game rules
+  ledgerStorage.js     # Versioned, bounded browser-storage boundary
+  ledgerStorage.test.js # Persistence and failure-path tests
   index.css            # Tailwind entrypoint and game styling
 docs/
   PRODUCT_MAP.md
@@ -62,7 +65,7 @@ docs/
 
 ## Known Gaps
 
-- No persistent ledger or saved high scores.
+- Ledger history is device-local only; it has no cloud sync or saved high scores.
 - No real risk model or market data.
 - No account system or brokerage integration.
 - No deployment target configured.

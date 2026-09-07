@@ -1,0 +1,35 @@
+version: 1
+project:
+  name: snapout-mvp
+  profile: vite
+  packageManager: npm
+  workspaceKind: single
+  sourceRoots:
+    - src
+commands:
+  install: npm ci
+  dev: npm run dev
+  lint: npm run lint
+  typecheck: null
+  test: npm test
+  build: npm run build
+  e2e: null
+  audit: npm audit --omit=dev --audit-level=high
+  verify: npm run verify
+quality:
+  enforcement: warn
+  requiredDocs:
+    - docs/product-spec.md
+    - docs/architecture.md
+    - docs/design-system.md
+    - docs/test-matrix.md
+  requiredStates:
+    - loading
+    - empty
+    - error
+    - success
+    - partial
+release:
+  requireRollbackEvidence: true
+  requireProductionSmokeTest: true
+plugins: []

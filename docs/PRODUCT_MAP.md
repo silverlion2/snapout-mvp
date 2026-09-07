@@ -1,6 +1,6 @@
 # SnapOut Product Map
 
-Last updated: 2026-05-29
+Last updated: 2026-09-08
 
 ## Product Thesis
 
@@ -57,14 +57,25 @@ Game state is plain React state backed by deterministic helpers.
 - `score`: run score.
 - `misses`: chased or frozen decisions.
 - `round`: completed rounds.
-- `ledger`: latest run decisions.
+- `ledger`: latest run decisions used by the deterministic game state.
+- `snapout.phantom-ledger.v1`: versioned browser-local history containing at most 40 sanitized decision records.
 - `IMPULSE_DECK`: static card deck with ticker, amount, drawdown, bait, headline, and note.
+
+## Persistent Ledger Flow
+
+1. On load, SnapOut reads only its versioned local-storage key and validates every field.
+2. Missing data becomes an empty ledger; valid subsets survive malformed entries with a visible recovery notice.
+3. Every resolved decision is appended immediately and the newest 40 records are retained.
+4. If browser storage rejects a read or write, the in-memory ledger and game remain usable in temporary mode.
+5. The player can clear the ledger through a focused two-step confirmation; no other browser key is touched.
 
 ## Product Surface
 
 - Primary app: `src/SnapOutApp.jsx`
 - Game rules: `src/gameLogic.js`
 - Rule tests: `src/gameLogic.test.js`
+- Local persistence boundary: `src/ledgerStorage.js`
+- Persistence tests: `src/ledgerStorage.test.js`
 - Entry wrapper: `src/App.jsx`
 - Mount point: `src/main.jsx`
 - Styling: Tailwind classes plus `src/index.css`
@@ -82,14 +93,14 @@ Game state is plain React state backed by deterministic helpers.
 
 - The loss estimate is a hard-coded gameplay heuristic, not financial advice or a validated risk model.
 - The game loop may train hesitation, but it does not prevent real trades.
-- Ledger entries are in-memory only and disappear on refresh.
+- Ledger history is limited to one browser/device and may be removed by browser privacy settings or data clearing.
+- The retained totals are gameplay feedback, not evidence of real-world savings or behavior change.
 - Difficulty tuning is unvalidated.
 - Any future real-money, brokerage, or user-account feature needs a compliance and safety review.
 
 ## High-Leverage Next Steps
 
-- Add local persistent ledger and best-run history.
+- Add a short post-run summary with the player’s most costly avoided impulse and optional best-run history.
 - Add difficulty settings for timer length, heat penalties, and deck composition.
-- Add a short post-run summary with the player’s most costly avoided impulse.
 - Add sound and reduced-motion preferences.
-- Add browser-level end-to-end tests for the start, snap, yolo, timeout, and restart paths.
+- Add automated browser-level tests for start, snap, yolo, timeout, persistence, clear, and restart paths.
