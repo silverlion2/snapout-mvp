@@ -70,3 +70,13 @@ docs/
 - No account system or brokerage integration.
 - No deployment target configured.
 - Game tuning, difficulty modes, and sound are still open.
+
+<!-- discoverability:start -->
+## Discoverability
+
+- **Project:** SnapOut MVP
+- **Summary:** A browser game that trains traders to recognize FOMO, avoid impulsive retail trades, manage heat, and preserve capital through timed decision cards.
+- **Primary keywords:** trading-psychology, behavioral-finance, fomo, browser-game, financial-education, retail-trading, risk-management, react, vite, javascript, vercel
+- **Use cases:** Trading psychology education, FOMO and impulse-control training, Browser-based financial education game
+- **Live URL:** https://snapout-mvp.vercel.app
+<!-- discoverability:end -->
