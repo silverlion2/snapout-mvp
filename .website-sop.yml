@@ -1,4 +1,4 @@
-version: 1
+version: 1.0.0
 project:
   name: snapout-mvp
   profile: vite
@@ -14,7 +14,7 @@ commands:
   test: npm test
   build: npm run build
   e2e: null
-  audit: npm audit --omit=dev --audit-level=high
+  audit: npm audit --omit=dev --audit-level=high --registry=https://registry.npmjs.org
   verify: npm run verify
 quality:
   enforcement: warn

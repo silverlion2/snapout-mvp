@@ -14,5 +14,6 @@
 | UI | storage unavailable | gameplay works; visible temporary-mode copy |
 | UI | keyboard | start, decide, open clear, cancel/confirm reachable |
 | Responsive | 320px, tablet, desktop | no horizontal clipping; 44px actions |
+| Responsive regression | 320px viewport with a vertical scrollbar | body does not enforce a wider minimum layout or expose horizontal scrolling |
 | Quality | test, lint, build | all configured native commands pass |
 | Security | audit + secret scan | no high production advisory; no committed secrets |

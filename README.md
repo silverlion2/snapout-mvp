@@ -4,6 +4,8 @@ SnapOut is now an HTML browser game about resisting impulsive retail trades. The
 
 The current MVP is a local React/Vite game. It keeps a bounded phantom ledger in the player's browser, but does not connect to brokerages, sync accounts, pull market data, or process payments.
 
+The persistent-ledger slice is maintained on the repository's default `main` line. Integration uses an isolated D-drive worktree so the saved development checkout and its unrelated local changes remain untouched.
+
 ## Current Product
 
 - Eight-card arcade run themed around high-volatility trade impulses.
@@ -56,6 +58,12 @@ src/
 docs/
   PRODUCT_MAP.md
   MEMORY_SYSTEM.md
+  product-spec.md
+  architecture.md
+  design-system.md
+  test-matrix.md
+  release-checklist.md
+  workspace-layout.md
 .gemini/
   GEMINI.md            # Local project identity for agent context
   MEMORY.md            # Local current-state summary
@@ -68,7 +76,8 @@ docs/
 - Ledger history is device-local only; it has no cloud sync or saved high scores.
 - No real risk model or market data.
 - No account system or brokerage integration.
-- No deployment target configured.
+- No repository-managed deployment configuration or verified hosting ownership; an existing public Vercel URL is listed below and is treated as a read-only smoke-test target.
+- No automated browser-level E2E command or dedicated typecheck command; unit tests, lint, build, SOP checks, and production-browser smoke evidence cover the current JavaScript MVP.
 - Game tuning, difficulty modes, and sound are still open.
 
 <!-- discoverability:start -->

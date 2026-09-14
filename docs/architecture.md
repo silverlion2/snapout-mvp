@@ -26,3 +26,9 @@ Browser storage is untrusted input. Every loaded field is validated and normaliz
 ## Observability And Rollback
 
 Observability is local UI state only; no telemetry is emitted. Rollback is removing the storage integration and UI; old versioned data is inert. No deployment is authorized.
+
+## Repository Integration Boundary
+
+The product source of truth is the established GitHub default branch `main`. Feature work may be verified in an isolated D-drive worktree, but delivery is complete only after an ordinary non-force push and independent equality checks across local `HEAD`, the cached remote-tracking ref, and the live GitHub ref. The saved checkout is not used as an integration surface while it contains unrelated local work.
+
+This repository boundary is separate from the runtime privacy boundary: GitHub receives source code and project records only. The browser ledger remains on the player's device and is never uploaded by the application.

@@ -1,6 +1,6 @@
 # SnapOut Product Map
 
-Last updated: 2026-09-08
+Last updated: 2026-09-15
 
 ## Product Thesis
 
@@ -68,6 +68,15 @@ Game state is plain React state backed by deterministic helpers.
 3. Every resolved decision is appended immediately and the newest 40 records are retained.
 4. If browser storage rejects a read or write, the in-memory ledger and game remain usable in temporary mode.
 5. The player can clear the ledger through a focused two-step confirmation; no other browser key is touched.
+
+## Repository And Delivery Topology
+
+- Canonical remote: `https://github.com/silverlion2/snapout-mvp.git`.
+- Default branch: `main`.
+- The ledger implementation was built as commit `ac16154` and reconciled with the then-current remote `main` at feature head `99c94b3`.
+- Default-branch promotion is performed only as an ordinary fast-forward after native checks, SOP checks, dependency and secret scans, responsive browser verification, and a fresh remote-ref check.
+- The saved checkout at `D:\workspace\snapout-mvp` remains intentionally untouched; integration and verification use the isolated `D:\workspace\snapout-main-integration` worktree.
+- Exact post-push remote-ref evidence is retained in the central portfolio governor records because a Git commit cannot contain its own final hash.
 
 ## Product Surface
 

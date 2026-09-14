@@ -11,7 +11,7 @@
 
 ## Current Product State
 
-The persistent phantom ledger is complete on `codex/persistent-phantom-ledger`. It stores at most 40 schema-validated decisions in the user's browser, shows retained totals and recent entries, recovers valid subsets, degrades to temporary mode when storage fails, and supports a focused two-step clear flow. No accounts, backend, telemetry, external messages, or real payments.
+The persistent phantom ledger is complete and is being promoted to the established default `main` line under the portfolio push-before-archive rule. It stores at most 40 schema-validated decisions in the user's browser, shows retained totals and recent entries, recovers valid subsets, degrades to temporary mode when storage fails, and supports a focused two-step clear flow. No accounts, backend, telemetry, external messages, or real payments.
 
 ## Next High-Value Work
 
@@ -22,12 +22,13 @@ The persistent phantom ledger is complete on `codex/persistent-phantom-ledger`. 
 
 - Remote: `origin` -> `https://github.com/silverlion2/snapout-mvp.git`
 - Remote default branch: `origin/main`
-- Work branch: `codex/persistent-phantom-ledger`
-- Base at session start: `7f4c46b feat: upgrade chinese version`
+- Integration worktree branch: `codex/persistent-ledger-main-20260915`
+- Remote `main` before integration: `b3628bccd08f1897e25e73a92dce22316ce66aaf`
+- Reconciled feature head: `99c94b3bd22deca2b266d4b1f3e9395c01602aa0`
 - Saved checkout at `D:\workspace\snapout-mvp` is intentionally untouched.
 
 ## Environment Notes
 
-- `web-sop` CLI is unavailable; use documented equivalent gates and record the gap.
+- `web-sop` CLI is available. The project uses warning enforcement; dedicated typecheck and automated E2E commands remain known gaps.
 - Bundled Python works, but project-tracker enrichment reports this worktree is not registered.
 - Token estimator finds no mapped conversations for this worktree and exits with `ZeroDivisionError`; token totals are unavailable.
