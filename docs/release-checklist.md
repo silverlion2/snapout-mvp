@@ -9,8 +9,8 @@ This checklist governs promotion of the persistent-ledger slice to the establish
 - Feature provenance: implementation `ac16154`; reconciled feature head `99c94b3bd22deca2b266d4b1f3e9395c01602aa0`.
 - Build evidence: `npm run verify` and `web-sop check --mode fast`; details and timestamps live in the dated session log.
 - Security evidence: official npm production and full development-toolchain audits, focused secret scan, and trust-boundary review recorded in the dated session log. The lockfile is updated within declared package ranges when a fixed compatible transitive version exists.
-- Browser evidence: critical local production-build journeys and responsive widths are recorded in the dated session log; an existing public URL is smoke-tested after default-branch push if it updates automatically.
+- Browser evidence: local production build and the existing public Vercel URL both passed start, keyboard decision, refresh persistence, 320x800 and 1440x900 overflow checks, 44px minimum action height, and zero console warning/error checks. The public asset fingerprints exactly matched the verified local build.
 - Missing automation: there is no dedicated typecheck or automated E2E command; these remain declared, non-hidden gaps under warning enforcement.
 - Monitoring: local UI status only; the product emits no telemetry.
-- Remote receipt: independently compare local `HEAD`, cached `origin/main`, and live `refs/heads/main`; store the exact final hash in the central portfolio governor records.
+- Remote receipt: the first integration push produced exact three-way equality at `93ca800a954d801141b5b7d85a92ef5ea2b37891`; independently compare the final follow-up commit across local `HEAD`, cached `origin/main`, and live `refs/heads/main`, then store that exact final hash in the central portfolio governor records.
 - Rollback: revert the default-branch milestone with a normal new commit. The versioned local-storage key then becomes inert; do not rewrite published history.
